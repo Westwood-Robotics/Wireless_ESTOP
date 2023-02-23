@@ -128,17 +128,17 @@ long global_time = 0;
 uint8_t error_timeout = 1;
 
 // OLED
-int display_mode = 0;  // E-STOP OFF - 0; E-STOP ON - 1; OFFLINE - 2
+int display_mode = 2;  // E-STOP OFF - 0; E-STOP ON - 1; OFFLINE - 2
 
 //显示状态
 void display_status() {
   if (error_timeout) {
     display_mode = 2;
     display_offline();
-  } else if ((remote_status & 0b00000010) && (display_mode != 1)) {
+  } else if ((local_status & 0b00000010) && (display_mode != 1)) {
     display_mode = 1;
     display_estop_on();
-  } else if (!(remote_status & 0b00000010) && (display_mode != 0)) {
+  } else if (!(local_status & 0b00000010) && (display_mode != 0)) {
     display_mode = 0;
     display_estop_off();
   }
@@ -256,10 +256,11 @@ void setup() {
     Wire1.setSCL(OLED_PIN_SCL);
     Wire1.begin();
     display.begin(SSD1306_SWITCHCAPVCC, OLED_I2C_ADDRESS);
-    delay(500);
+    display.clearDisplay();
+    display.display();
+    delay(100);
 
     //显示logo
-    display.clearDisplay();
     display.drawBitmap(0, 0, logo, OLED_WIDTH, OLED_HEIGHT, WHITE);
     display.display();
     display.clearDisplay();
@@ -430,7 +431,8 @@ void loop() {
     // Read ACK payload
     reg_read(spi0, R_RX_PAYLOAD, rxbuf, 2);
     remote_status = rxbuf[1];
-    error = remote_status >> 2;
+    local_status = switch_status | remote_status;
+    error = local_status >> 2;
     global_time = micros();
   }
   
@@ -442,8 +444,8 @@ void loop() {
   gpio_put(PIN_STATUS, error);
   // Serial.println(error);
   //  update stop display
-  gpio_put(PIN_STOP_LED, (remote_status & 0b00000001));
-  gpio_put(PIN_SSTOP_LED, (remote_status & 0b00000010));  
+  gpio_put(PIN_STOP_LED, (local_status & 0b00000001));
+  gpio_put(PIN_SSTOP_LED, (local_status & 0b00000010));  
 
 
   // take action
