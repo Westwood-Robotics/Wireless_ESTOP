@@ -14,4 +14,8 @@ To make changes to the code, please first config your ARDUINO IDE with Raspberry
 <img src="https://github.com/Westwood-Robotics/Wireless_ESTOP/blob/main/ESTOP_Lite/Rev0/Pic/FRONT.jpg" width=50% height=50%>
 <img src="https://github.com/Westwood-Robotics/Wireless_ESTOP/blob/main/ESTOP_Lite/Rev0/Pic/ISO.jpg" width=60%>
 
+## 3D Model
+RX Module(Receiver): https://github.com/Westwood-Robotics/Wireless_ESTOP/blob/main/ESTOP_Lite/Rev0/Dummy/ESTOP_RX.STEP
+
+
 
