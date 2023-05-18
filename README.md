@@ -11,5 +11,7 @@ Contact us for commercial license should you need full rights to create and dist
 To make changes to the code, please first config your ARDUINO IDE with Raspberry Pi Pico setup: https://github.com/earlephilhower/arduino-pico
 
 ## Buttons and Pinout on Receiver 
+<img src="https://github.com/Westwood-Robotics/Wireless_ESTOP/blob/main/ESTOP_Lite/Rev0/Pic/FRONT.jpg" width=50% height=50%>
+<img src="https://github.com/Westwood-Robotics/Wireless_ESTOP/blob/main/ESTOP_Lite/Rev0/Pic/ISO.jpg" width=60%>
 
 
