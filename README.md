@@ -7,6 +7,13 @@ This repo currently contains the open-source code for the transmitter and receiv
 The Wireless ESTOP is dual-licensed under both commercial and open-source licenses. The work in this repo is under GNU General Public License (GPL) version 3, which is ideal for use cases such as open-source projects with open-source distribution, student/academic purposes, hobby projects, internal research projects without external distribution, or other projects where all GPL obligations can be met. Read the full text of [the GNU GPL version 3](https://www.gnu.org/licenses/gpl-3.0.html) for details.  
 Contact us for commercial license should you need full rights to create and distribute the platform on your own terms without any open-source license obligations.
 
+## Update Log
+1. Pin change: the following two pins has been moved: <br />
+   NRF_CE -> 19<br />
+   SPI0_CSN -> 5<br />
+2. Add support for one additional SPI line, pins can also be used for general purposes. (scheme/drawing to be released)
+3. ESTOP signal can be sent directly or via a BJT. Select it on the board then modify the code.
+
 ## ARDUINO IDE
 To make changes to the code, please first config your ARDUINO IDE with Raspberry Pi Pico setup: https://github.com/earlephilhower/arduino-pico
 
