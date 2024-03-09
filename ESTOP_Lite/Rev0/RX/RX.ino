@@ -191,7 +191,7 @@ void setup() {
     // Signal ports        
     gpio_init(PIN_SSTOP_OUT);
     gpio_set_dir(PIN_SSTOP_OUT,GPIO_OUT);
-    gpio_put(PIN_SSTOP_OUT, 1);
+    gpio_put(PIN_SSTOP_OUT, 0);
 
     gpio_init(PIN_STATUS);
     gpio_set_dir(PIN_STATUS,GPIO_OUT);
@@ -302,10 +302,10 @@ void loop() {
 
   // take action
   if(local_status & 0b00000010){
-    gpio_put(PIN_SSTOP_OUT, 1);    
+    gpio_put(PIN_SSTOP_OUT, 0);    
   }
   else{
-    gpio_put(PIN_SSTOP_OUT, 0);
+    gpio_put(PIN_SSTOP_OUT, 1);
   }
 //  Serial.println("    ");
 //  Serial.println("    ");
