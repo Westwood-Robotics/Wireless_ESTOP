@@ -4,7 +4,7 @@ __email__ = "xzhang@westwoodrobotics.io"
 __copyright__ = "Copyright 2021~2024 Westwood Robotics"
 __date__ = "March. 07, 2024"
 
-__version__ = "1.2.1"
+__version__ = "2.1.1"
 __status__ = "Production" 
 */
 #include "stdio.h"
@@ -30,12 +30,12 @@ __status__ = "Production"
 #define PIN_CE 19
 // #define PIN_IRQ 5
 // Others
-#define PIN_SSTOP_IN     8  //软急停输入
-#define PIN_SSTOP_OUT    13 //软急停输出
-#define PIN_STOP_IN      9  //急停输入 !!!not in use!!!
-#define PIN_STOP_LED     10  //急停显示 !!!not in use!!!
-#define PIN_SSTOP_LED    6  //软急停显示
-#define PIN_STATUS       7 //offline状态显示
+#define PIN_SSTOP_IN     8  //S-ESTOP Signal Input
+#define PIN_SSTOP_OUT    13 //S-ESTOP Execution Signal Output
+#define PIN_STOP_IN      9  //PWR-ESTOP Signal Input !!!not in use!!!
+#define PIN_STOP_LED     10 //PWR-ESTOP Status LED !!!not in use!!!
+#define PIN_SSTOP_LED    6  //S-ESTOP Status LED
+#define PIN_STATUS       7  //offline Status LED
 #define loop_time        2000 // Loop time control (us)
 #define FILTER_MAX_COUNT 100 // remote filter max count
 #define BLINK_COUNT      3   // Warning blink count
@@ -53,8 +53,8 @@ __status__ = "Production"
 Adafruit_NeoPixel pixels(NUMPIXELS, NeoPIN, NEO_GRB + NEO_KHZ800);
 
 unsigned char txbuf[TX_PLOAD_WIDTH];
-unsigned char rxbuf[TX_PLOAD_WIDTH];  //存放数据
-unsigned char ackbuf[ACK_PLOAD_WIDTH];  //存放数据
+unsigned char rxbuf[TX_PLOAD_WIDTH];    //RX Buffer
+unsigned char ackbuf[ACK_PLOAD_WIDTH];  //Ack Buffer
 unsigned char ADDRESS1[TX_ADR_WIDTH] = {0x78,0x78,0x78,0x78,0x78};
 unsigned char ADDRESS2[TX_ADR_WIDTH] = {0xC2,0xC2,0xC2,0xC2,0xC2};
 
@@ -111,21 +111,21 @@ static void remote_status_filter(){
 
 
 void setup() {
-    //初始化spi0
+    //Init spi0
     spi_init(spi0,1000*1000);
     Serial.begin(115200);
 
-    //定义引脚
+    //GPIO SPI
     gpio_set_function(PIN_SCK,GPIO_FUNC_SPI);
     gpio_set_function(PIN_MOSI,GPIO_FUNC_SPI);
     gpio_set_function(PIN_MISO,GPIO_FUNC_SPI);
 
-    //防噪声，拉高引脚
+    //Pull-up SPI
     gpio_pull_up(PIN_MISO);
     gpio_pull_up(PIN_MOSI);
     gpio_pull_down(PIN_SCK);
 
-    //CSN与CE引脚
+    //CSN and CE pins
     gpio_init(PIN_CSN);
     gpio_set_dir(PIN_CSN,GPIO_OUT);
     gpio_put(PIN_CSN,1);
@@ -133,36 +133,36 @@ void setup() {
     gpio_set_dir(PIN_CE,GPIO_OUT);
     gpio_put(PIN_CE,0);
 
-//    //IRQ引脚用于判断数据是否发送成功
+//    //IRQ pin for DATA Sent Success
 //    gpio_init(PIN_IRQ);
 //    gpio_set_dir(PIN_IRQ,GPIO_IN);
 
     delay(300);
 
-    //接收端配置
+    //RX Config
     reg_write(spi0,W_REGISTER+TX_ADDR,ADDRESS1,TX_ADR_WIDTH);
     reg_write(spi0,W_REGISTER+RX_ADDR_P0,ADDRESS1,TX_ADR_WIDTH);
     
-    //发送端寄存器配置
-    uint8_t CONFIG2 = 0x01;  //自动应答(P0)
+    //Reg. Config
+    uint8_t CONFIG2 = 0x01;  //Auto Acknoledge(P0)
     write_register(W_REGISTER+EN_AA, CONFIG2);
  
-//    uint8_t CONFIG3 = 0x03;  //地址宽度（5字节）
+//    uint8_t CONFIG3 = 0x03;  //Address Size(5 Bytes)
 //    write_register(W_REGISTER+SETUP_AW, CONFIG3);   
       
-    uint8_t CONFIG4 = 0x02;  //自动重发两次
+    uint8_t CONFIG4 = 0x02;  //Auto Resend
     write_register(W_REGISTER+SETUP_RETR, CONFIG4);
     
-    uint8_t CONFIG5 = 0x00;  //设置射频通道频率
+    uint8_t CONFIG5 = 0x00;  //Channel Freq
     write_register(W_REGISTER+RF_CH, CONFIG5);
     
-    uint8_t CONFIG6 = 0x0F;  //设置射频配置
+    uint8_t CONFIG6 = 0x0F;  //RF_SETUP
     write_register(W_REGISTER+RF_SETUP, CONFIG6);
     
-    uint8_t CONFIG7 = 0x01;  //接收地址（pipe 0）
+    uint8_t CONFIG7 = 0x01;  //RX Address(pipe 0)
     write_register(W_REGISTER+EN_RXADDR, CONFIG7); 
      
-    uint8_t CONFIG1 = 0b01001011;  //设置芯片为接收模式+MASK_RX_DR
+    uint8_t CONFIG1 = 0b01001011;  //Set as RX+MASK_RX_DR
     write_register(W_REGISTER+NRF_CONFIG, CONFIG1);
 
     uint8_t CONFIG_FEATURE = 0b00000110; // DPL, Payload with ACK

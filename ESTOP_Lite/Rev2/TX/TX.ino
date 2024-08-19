@@ -4,7 +4,7 @@ __email__ = "xzhang@westwoodrobotics.io"
 __copyright__ = "Copyright 2021~2024 Westwood Robotics"
 __date__ = "March. 07, 2024"
 
-__version__ = "1.2.1"
+__version__ = "2.1.1"
 __status__ = "Production" 
 */
 #include "stdio.h"
@@ -33,12 +33,12 @@ Adafruit_SSD1306 display = Adafruit_SSD1306(OLED_WIDTH, OLED_HEIGHT, &Wire1, OLE
 #define PIN_CE 19
 //#define PIN_IRQ 5
 // Others
-#define PIN_SSTOP_IN     8  //软急停输入
-#define PIN_SSTOP_OUT    13 //软急停输出
-#define PIN_STOP_IN      9  //急停输入 !!!not in use!!!
-#define PIN_STOP_LED     10  //急停显示 !!!not in use!!!
-#define PIN_SSTOP_LED    6  //软急停显示
-#define PIN_STATUS       7 //offline状态显示
+#define PIN_SSTOP_IN     8  //S-ESTOP Signal Input
+#define PIN_SSTOP_OUT    13 //S-ESTOP Execution Signal Output
+#define PIN_STOP_IN      9  //PWR-ESTOP Signal Input !!!not in use!!!
+#define PIN_STOP_LED     10 //PWR-ESTOP Status LED !!!not in use!!!
+#define PIN_SSTOP_LED    6  //S-ESTOP Status LED
+#define PIN_STATUS       7  //offline Status LED
 #define loop_time        2000 // Loop time control (us)
 #define FILTER_MAX_COUNT 100 // remote filter max count
 
@@ -130,7 +130,7 @@ uint8_t error_timeout = 1;
 // OLED
 int display_mode = 2;  // E-STOP OFF - 0; E-STOP ON - 1; OFFLINE - 2
 
-//显示状态
+//Display Status
 void display_status() {
   if (error_timeout) {
     display_mode = 2;
@@ -144,7 +144,7 @@ void display_status() {
   }
 }
 
-//显示E-STOP状态
+//Display E-STOP Status
 void display_estop_on() {
   display.setTextSize(2);
   display.setTextColor(WHITE);
@@ -174,7 +174,7 @@ void display_offline() {
   display.clearDisplay();
 }
 
-//写入数据
+//Data Write
 int reg_write(spi_inst_t* spi,
               const uint8_t reg,
               uint8_t *buf,
@@ -199,7 +199,7 @@ int reg_write(spi_inst_t* spi,
 }
 
 
-//读取数据
+//Data Read
 int reg_read( spi_inst_t* spi,
               const uint8_t reg,
               uint8_t *buf,
@@ -218,7 +218,7 @@ int reg_read( spi_inst_t* spi,
 } 
 
 
-//写入寄存器（用于寄存器设置）
+//Write Reg（for config Registers）
 static void write_register(uint8_t reg, uint8_t data) {
     uint8_t buf[2];
     buf[0] = reg;
@@ -229,7 +229,7 @@ static void write_register(uint8_t reg, uint8_t data) {
 }
 
 
-//读取寄存器（用于寄存器设置）
+//Read Reg（for config Registers）
 static void read_register(uint8_t reg, uint8_t *buf, uint16_t len) {
     gpio_put(PIN_CSN,0);
     spi_read_blocking(spi0, reg, buf, len);
@@ -247,11 +247,11 @@ uint8_t get_swtich_status(uint8_t SSTOP, uint8_t ESTOP){
 
 
 void setup() {
-    //初始化spi0
+    //Init spi0
     spi_init(spi0,1000*1000);
     Serial.begin(9600);
 
-    //开启屏幕
+    //Turn on Screen
     Wire1.setSDA(OLED_PIN_SDA);
     Wire1.setSCL(OLED_PIN_SCL);
     Wire1.begin();
@@ -260,23 +260,23 @@ void setup() {
     display.display();
     delay(100);
 
-    //显示logo
+    //Display logo
     display.drawBitmap(0, 0, logo, OLED_WIDTH, OLED_HEIGHT, WHITE);
     display.display();
     display.clearDisplay();
     delay(1000);
     
-    //定义引脚
+    //GPIO SPI
     gpio_set_function(PIN_SCK,GPIO_FUNC_SPI);
     gpio_set_function(PIN_MOSI,GPIO_FUNC_SPI);
     gpio_set_function(PIN_MISO,GPIO_FUNC_SPI);
 
-    //防噪声，拉高引脚
+    //Pull-up SPI
     gpio_pull_up(PIN_MISO);
     gpio_pull_up(PIN_MOSI);
     gpio_pull_down(PIN_SCK);
 
-    //CSN与CE引脚
+    //CSN and CE pins
     gpio_init(PIN_CSN);
     gpio_set_dir(PIN_CSN,GPIO_OUT);
     gpio_put(PIN_CSN,1);
@@ -284,36 +284,36 @@ void setup() {
     gpio_set_dir(PIN_CE,GPIO_OUT);
     gpio_put(PIN_CE,0);
 
-    //IRQ引脚用于判断数据是否发送成功
+//    //IRQ pin for DATA Sent Success
 //    gpio_init(PIN_IRQ);
 //    gpio_set_dir(PIN_IRQ,GPIO_IN);
 
     delay(1000);
 
-    //发送端配置
+    //TX Config
     reg_write(spi0,W_REGISTER+TX_ADDR,ADDRESS1,TX_ADR_WIDTH);
     reg_write(spi0,W_REGISTER+RX_ADDR_P0,ADDRESS1,TX_ADR_WIDTH);
     
-    //发送端寄存器配置
-    uint8_t CONFIG2 = 0x01;  //自动应答(P0)
+    //Reg. Config
+    uint8_t CONFIG2 = 0x01;  //Auto Acknoledge(P0)
     write_register(W_REGISTER+EN_AA, CONFIG2);
  
-//    uint8_t CONFIG3 = 0x03;  //地址宽度（5字节）
+//    uint8_t CONFIG3 = 0x03;  //Address Size(5 Bytes)
 //    write_register(W_REGISTER+SETUP_AW, CONFIG3);   
       
-    uint8_t CONFIG4 = 0x02;  //自动重发两次
+    uint8_t CONFIG4 = 0x02;  //Auto Resend twice
     write_register(W_REGISTER+SETUP_RETR, CONFIG4);
     
-    uint8_t CONFIG5 = 0x00;  //设置射频通道频率
+    uint8_t CONFIG5 = 0x00;  //Channel Freq
     write_register(W_REGISTER+RF_CH, CONFIG5);
     
-    uint8_t CONFIG6 = 0x0F;  //设置射频配置
+    uint8_t CONFIG6 = 0x0F;  //RF_SETUP
     write_register(W_REGISTER+RF_SETUP, CONFIG6);
     
-    uint8_t CONFIG7 = 0x01;  //接收地址（pipe 0）
+    uint8_t CONFIG7 = 0x01;  //RX Address(pipe 0)
     write_register(W_REGISTER+EN_RXADDR, CONFIG7); 
      
-    uint8_t CONFIG1 = 0b00101010;  //设置芯片为发送模式+MASK_TX_DS
+    uint8_t CONFIG1 = 0b00101010;  //Set as TX+MASK_TX_DS
     write_register(W_REGISTER+NRF_CONFIG, CONFIG1);
 
     uint8_t CONFIG_FEATURE = 0b00000110; // DPL, Payload with ACK
@@ -377,7 +377,7 @@ void loop() {
     write_register(FLUSH_RX,0xFF);
   }
   
-  reg_write(spi0, W_TX_PAYLOAD, txbuf, 1);  //发送信号
+  reg_write(spi0, W_TX_PAYLOAD, txbuf, 1);  //Data Send
 
   // Monitor IRQ
   // uint8_t TX_DS_IRQ = gpio_get(PIN_IRQ);
@@ -406,7 +406,7 @@ void loop() {
     // Check if TX Empty
     if(rxbuf[1] & 0b00010000){
       // TX Empty
-      reg_write(spi0, W_TX_PAYLOAD, txbuf, 1);  //发送信号
+      reg_write(spi0, W_TX_PAYLOAD, txbuf, 1);  //Data Send
     }
     delayMicroseconds(100);
     // TX_DS_IRQ = gpio_get(PIN_IRQ);

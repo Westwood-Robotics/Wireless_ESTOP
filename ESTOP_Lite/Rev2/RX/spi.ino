@@ -1,4 +1,4 @@
-//写入数据
+//Data Write
 int reg_write(spi_inst_t* spi,
               const uint8_t reg,
               uint8_t *buf,
@@ -23,7 +23,7 @@ int reg_write(spi_inst_t* spi,
 }
 
 
-//读取数据
+//Data Read
 int reg_read( spi_inst_t* spi,
               const uint8_t reg,
               uint8_t *buf,
@@ -42,7 +42,7 @@ int reg_read( spi_inst_t* spi,
 } 
 
 
-//写入寄存器（用于寄存器设置）
+//Write Reg（for config Registers）
 static void write_register(uint8_t reg, uint8_t data) {
     uint8_t buf[2];
     buf[0] = reg;
@@ -52,8 +52,7 @@ static void write_register(uint8_t reg, uint8_t data) {
     gpio_put(PIN_CSN,1);
 }
 
-
-//读取寄存器（用于寄存器设置）
+//Read Reg（for config Registers）
 static void read_register(uint8_t reg, uint8_t *buf, uint16_t len) {
     gpio_put(PIN_CSN,0);
     spi_read_blocking(spi0, reg, buf, len);
