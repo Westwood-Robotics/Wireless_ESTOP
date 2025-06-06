@@ -7,11 +7,11 @@ To avoid communication conflict between multiple Wireless ESTOP systems, users c
     ```bash
     ls /dev/serial/by-id
     ```
-    Modify line 105 in ``channel_setup.py`` accordingly.
 2. Unplug the device.
-3. Run the python script.
+3. Run the program.
     ```bash
-    python3 channel_setup.py
+    ./channel_setup
     ```
-4. Now plug in the device again. Wait for the connection and then follow the instruction. 
-5. You need to have the same channel setup for your transmitter and receiver.
+4. Enter the serial port name.
+5. Now plug in the device again. Wait for the connection and then follow the instruction. 
+6. You need to have the same channel setup for your transmitter and receiver.
