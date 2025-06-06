@@ -1,19 +1,19 @@
 /*
 __author__ = "Xiaoguang Zhang"
 __email__ = "xzhang@westwoodrobotics.io"
-__copyright__ = "Copyright 2021~2024 Westwood Robotics"
-__date__ = "March. 07, 2024"
+__copyright__ = "Copyright 2021~2025 Westwood Robotics"
+__date__ = "May 28, 2025"
 
 __version__ = "2.1.1"
 __status__ = "Production" 
 */
+
 #include "stdio.h"
+#include <EEPROM.h>
+#include <nRF24L01.h>
 #include "pico/stdlib.h"
 #include "hardware/spi.h" 
 #include "pico/binary_info.h"
-
-#include <nRF24L01.h>
-
 #include <Adafruit_NeoPixel.h>
 #ifdef __AVR__
  #include <avr/power.h> // Required for 16 MHz Adafruit Trinket
@@ -40,9 +40,8 @@ __status__ = "Production"
 #define FILTER_MAX_COUNT 100 // remote filter max count
 #define BLINK_COUNT      3   // Warning blink count
 
-
-#define TX_ADR_WIDTH 5
-#define TX_PLOAD_WIDTH 6
+#define TX_ADR_WIDTH    5
+#define TX_PLOAD_WIDTH  6
 #define ACK_PLOAD_WIDTH 6
 
 // Which GPIO pin on is connected to the NeoPixels?
@@ -55,8 +54,12 @@ Adafruit_NeoPixel pixels(NUMPIXELS, NeoPIN, NEO_GRB + NEO_KHZ800);
 unsigned char txbuf[TX_PLOAD_WIDTH];
 unsigned char rxbuf[TX_PLOAD_WIDTH];    //RX Buffer
 unsigned char ackbuf[ACK_PLOAD_WIDTH];  //Ack Buffer
-unsigned char ADDRESS1[TX_ADR_WIDTH] = {0x78,0x78,0x78,0x78,0x78};
-unsigned char ADDRESS2[TX_ADR_WIDTH] = {0xC2,0xC2,0xC2,0xC2,0xC2};
+
+unsigned char CHANNEL_ADDRESS[TX_ADR_WIDTH] = {0x78,0x78,0x78,0x78,0x78};
+uint8_t CHANNEL_FREQUENCY = 0x00;
+
+uint8_t read_data_packet[5] = {0xFF, 0x02, 0x00, 0x00, 0xFE};
+uint8_t send_data_packet[5] = {0xFF, 0x02, 0x00, 0x00, 0xFE};
 
 // Global variables
 uint8_t local_status = 0b00000000;  // LSB->MSB: STOP, SSTOP, Error
@@ -110,10 +113,84 @@ static void remote_status_filter(){
 }
 
 
+// Update Channel Address & Frquency
+void config_channel(void){
+  send_data_packet[1] = 0x0B;
+  send_data();
+
+  int count = 0;
+  while ((Serial.available() < 5) and (count < 15))  // wait for 15 seconds
+  {
+    sleep_ms(1000);
+    count += 1;
+  }
+
+  if (read_data() and read_data_packet[1] == 0x0C)
+  {
+    EEPROM.write(0, read_data_packet[2]);
+    EEPROM.write(1, read_data_packet[3]);
+    EEPROM.commit();
+    sleep_ms(2000);
+  }
+}
+
+bool read_data(void){
+  while (Serial.available() >= 5)
+  {
+    if (Serial.read() == 0xFF)
+    {
+      if (Serial.available() >= 4)
+      {
+        for (int i = 1; i < 5; i++)
+        {
+          read_data_packet[i] = Serial.read();
+        }
+
+        while (Serial.available()) Serial.read();  // clear buffer
+
+        if (read_data_packet[4] == 0xFE)
+        {
+          return true;
+        }
+        else
+        {
+          return false;
+        }
+      }
+    }
+  }
+  return false;
+}
+
+void send_data(void){
+  send_data_packet[2] = EEPROM.read(0);
+  send_data_packet[3] = EEPROM.read(1);
+  Serial.write(send_data_packet, 5);
+}
+
+
 void setup() {
     //Init spi0
     spi_init(spi0,1000*1000);
-    Serial.begin(115200);
+    Serial.begin(9600);
+    delay(2000);
+
+    //Wait for channel info update
+    EEPROM.begin(2);
+    if (read_data())
+    {
+      if (read_data_packet[1] == 0x0A)
+      {
+        config_channel();
+      }
+    }
+
+    // Get channel info from eeprom
+    for (int idx = 0; idx < TX_ADR_WIDTH; idx++)
+    {
+      CHANNEL_ADDRESS[idx] = EEPROM.read(0);
+    }
+    CHANNEL_FREQUENCY = EEPROM.read(1);
 
     //GPIO SPI
     gpio_set_function(PIN_SCK,GPIO_FUNC_SPI);
@@ -140,8 +217,8 @@ void setup() {
     delay(300);
 
     //RX Config
-    reg_write(spi0,W_REGISTER+TX_ADDR,ADDRESS1,TX_ADR_WIDTH);
-    reg_write(spi0,W_REGISTER+RX_ADDR_P0,ADDRESS1,TX_ADR_WIDTH);
+    reg_write(spi0,W_REGISTER+TX_ADDR,CHANNEL_ADDRESS,TX_ADR_WIDTH);
+    reg_write(spi0,W_REGISTER+RX_ADDR_P0,CHANNEL_ADDRESS,TX_ADR_WIDTH);
     
     //Reg. Config
     uint8_t CONFIG2 = 0x01;  //Auto Acknoledge(P0)
@@ -153,8 +230,9 @@ void setup() {
     uint8_t CONFIG4 = 0x02;  //Auto Resend
     write_register(W_REGISTER+SETUP_RETR, CONFIG4);
     
-    uint8_t CONFIG5 = 0x00;  //Channel Freq
-    write_register(W_REGISTER+RF_CH, CONFIG5);
+    // uint8_t CONFIG5 = 0x00;  //Channel Freq
+    // write_register(W_REGISTER+RF_CH, CONFIG5);
+    write_register(W_REGISTER+RF_CH, CHANNEL_FREQUENCY);
     
     uint8_t CONFIG6 = 0x0F;  //RF_SETUP
     write_register(W_REGISTER+RF_SETUP, CONFIG6);

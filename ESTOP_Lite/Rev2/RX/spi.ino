@@ -52,6 +52,7 @@ static void write_register(uint8_t reg, uint8_t data) {
     gpio_put(PIN_CSN,1);
 }
 
+
 //Read Reg（for config Registers）
 static void read_register(uint8_t reg, uint8_t *buf, uint16_t len) {
     gpio_put(PIN_CSN,0);
