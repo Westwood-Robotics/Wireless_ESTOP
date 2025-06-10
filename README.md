@@ -24,5 +24,19 @@ To make changes to the code, please first config your ARDUINO IDE with Raspberry
 ## 3D Model
 RX Module(Receiver): https://github.com/Westwood-Robotics/Wireless_ESTOP/blob/main/ESTOP_Lite/Rev0/Dummy/ESTOP_RX.STEP
 
+## Channel Setup
 
+To avoid communication conflict between multiple Wireless ESTOP systems, users can modify their ESTOP channel setup.
 
+1. Identify the serial port name for you Wireless ESTOP device (transmitter/receiver). Plug in the device and enter the following command in terminal:
+    ```bash
+    ls /dev/serial/by-id
+    ```
+2. Unplug the device.
+3. Run the program.
+    ```bash
+    ESTOP_Lite/Rev2/Util/setup
+    ```
+4. Enter the serial port name.
+5. Now plug in the device again. Wait for the connection and then follow the instruction. 
+6. You need to have the same channel setup for your transmitter and receiver.
