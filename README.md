@@ -43,7 +43,7 @@ To avoid communication conflict between multiple Wireless ESTOP systems, users c
 2. Unplug the device.
 3. Run the program.
     ```bash
-    ./channel_setup
+    ./setup
     ```
 4. Enter the serial port name.
 5. Now plug in the device again. Wait for the connection and then **follow the instruction**. 
