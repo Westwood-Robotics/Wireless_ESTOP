@@ -40,13 +40,12 @@ To avoid communication conflict between multiple Wireless ESTOP systems, users c
     ```bash
     ls /dev/serial/by-id
     ```
-2. Unplug the device.
-3. Run the program.
+2. Press the ESTOP button and run the program.
     ```bash
     ./setup
     ```
 4. Enter the serial port name.
-5. Now plug in the device again. Wait for the connection and then **follow the instruction**. 
+5. Wait for the connection and then **follow the instruction**. 
 6. You need to have the same channel setup for your transmitter and receiver.
 
 
